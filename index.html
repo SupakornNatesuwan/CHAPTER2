@@ -32,7 +32,6 @@
             z-index: 10000;
         }
 
-        /* ปุ่ม Yes แบบใหม่: ไม่มีกรอบ มีแค่ White Highlight Glow */
         .glow-text-btn {
             background: none;
             border: none;
@@ -42,7 +41,6 @@
             cursor: pointer;
             font-family: 'Mali', cursive;
             transition: all 0.5s ease;
-            /* เพิ่มเงาสีขาวฟุ้งๆ */
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 
                          0 0 20px rgba(255, 255, 255, 0.5),
                          0 0 30px rgba(255, 255, 255, 0.3);
@@ -138,9 +136,9 @@
         </div>
     </div>
 
-    <audio id="yaySound" src="sound/yay-roblox.mp3"></audio>
-    <audio id="bloomingMusic" src="sound/blooming.mp3" loop></audio>
-    <audio id="understandMusic" src="sound/understand.mp3"></audio>
+    <audio id="yaySound" src="sound/yay-roblox.mp3" crossOrigin="anonymous"></audio>
+    <audio id="bloomingMusic" src="sound/blooming.mp3" loop crossOrigin="anonymous"></audio>
+    <audio id="understandMusic" src="sound/understand.mp3" crossOrigin="anonymous"></audio>
 
     <script>
         const yesBtn = document.getElementById('yesBtn');
@@ -157,6 +155,30 @@
         let textIndex = 0;
         let currentPaddingX = 20, currentPaddingY = 10, currentFontSize = 1.2;
 
+        let audioCtx, bloomingGain, understandGain;
+
+        function initAudioContext() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            bloomingGain = audioCtx.createGain();
+            understandGain = audioCtx.createGain();
+            audioCtx.createMediaElementSource(bloomingMusic).connect(bloomingGain).connect(audioCtx.destination);
+            audioCtx.createMediaElementSource(understandMusic).connect(understandGain).connect(audioCtx.destination);
+        }
+
+        // ฟังก์ชัน Fade Out ที่ปรับให้เสถียรขึ้น
+        function fadeOutAudio(gainNode, audioEl, duration, callback) {
+            if (!audioCtx) { audioEl.pause(); if(callback) callback(); return; }
+            const now = audioCtx.currentTime;
+            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+            // ใช้ linearRamp เพื่อความแม่นยำในการจางหายพร้อมข้อความ
+            gainNode.gain.linearRampToValueAtTime(0, now + (duration / 1000));
+            setTimeout(() => {
+                audioEl.pause();
+                if(callback) callback();
+            }, duration + 100); 
+        }
+
         function createHeartRain() {
             setInterval(() => {
                 const heart = document.createElement('div');
@@ -169,19 +191,6 @@
                 document.body.appendChild(heart);
                 setTimeout(() => { heart.remove(); }, 5000);
             }, 60);
-        }
-
-        function fadeOutAudio(audio, speed, callback) {
-            let volume = audio.volume;
-            const fadeInterval = setInterval(() => {
-                if (volume > 0.02) {
-                    volume -= 0.02; audio.volume = volume;
-                } else {
-                    audio.volume = 0; audio.pause();
-                    clearInterval(fadeInterval);
-                    if(callback) callback();
-                }
-            }, speed || 100);
         }
 
         async function showLyric(text, duration) {
@@ -203,6 +212,7 @@
         });
 
         yesBtn.addEventListener('click', () => {
+            initAudioContext();
             const playYay = () => { for(let i=0; i<3; i++) { setTimeout(() => { new Audio(document.getElementById('yaySound').src).play(); }, i*200); } };
             playYay();
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -216,21 +226,24 @@
                     document.getElementById('openBtn').addEventListener('click', () => {
                         mainContent.style.opacity = "0";
                         setTimeout(() => {
+                            if(audioCtx) bloomingGain.gain.value = 1;
                             bloomingMusic.currentTime = 9.5; bloomingMusic.play();
                             mainContent.innerHTML = `<div class="final-screen"><div style="font-size: 10rem;">🌹🌹🌹</div><h2 style="color: #b71c1c; margin-top: 20px; padding: 0 20px;">สุขสันต์วันวาเลนไทน์น้าค้าบบคนที่เก่งที่สุดในโลกกกกของเค้าา💖 มว๊าา😽</h2></div>`;
                             mainContent.style.opacity = "1";
                             setTimeout(() => {
                                 mainContent.style.opacity = "0";
                                 setTimeout(() => {
-                                    mainContent.innerHTML = `<div class="letter-paper"><p><strong>ถึง บิบี๋ของเค้า...</strong></p><p>ขอบคุณที่คอยเป็นความสุขของเค้าตลอดหนึ่งปีที่ผ่านมา ขอบคุณที่ตั้งใจรักเค้าและคอยอยู่ด้วยกันมาจนถึงทุกวันนี้</p><p>ในอนาคตคงจะมี ของขวัญอีกมากมาย ดอกไม้อีกหลายช่อ หวังว่าจะยังคงเป็นเธอที่คอยเปิดออกมา และคอยอยู่เคียงข้างกัน</p><p>เค้าจะคอยอยู่ข้างๆเธอแบบนี้ไปอีกนานๆเลยนะครับ รักเธอที่สุดในโลกเลยยย เค้าจะอยู่ดูแลเธอไปอีกนานๆเลยนะครับ💖</p><p style="text-align: right;">- จาก คนโปรดของเธอ -</p><div class="seal-wrapper" id="endTrigger"><span class="seal-hint">อ่านจบแล้ว<br>ลองกดดูนะคั้บบ</span><div class="wax-seal">❤</div></div></div>`;
+                                    mainContent.innerHTML = `<div class="letter-paper"><p><strong>ถึง บิบี๋ของเค้า...</strong></p><p>ขอบคุณที่คอยเป็นความสุขของเค้าตลอดหนึ่งปีที่ผ่านมา ขอบคุณที่ตั้งใจรักเค้าและคอยอยู่ด้วยกันมาจนถึงทุกวันนี้</p><p>ในอนาคตคงจะมี ของขวัญอีกมากมาย ดอกไม้อีกหลายช่อ หวังว่าจะยังคงเป็นเธอที่คอยเปิดออกมา และคอยอยู่เคียงข้างกัน</p><p>เค้าจะคอยอยู่ข้างๆเธอแบบนี้ไปอีกนานๆเลยนะครับ รักเธอที่สุดในโลกเลยยย เ้าจะอยู่ดูแลเธอไปอีกนานๆเลยนะครับ💖</p><p style="text-align: right;">- จาก คนโปรดของเธอ -</p><div class="seal-wrapper" id="endTrigger"><span class="seal-hint">อ่านจบแล้ว<br>ลองกดดูนะคั้บบ</span><div class="wax-seal">❤</div></div></div>`;
                                     mainContent.style.opacity = "1";
                                     createHeartRain();
                                     document.getElementById('endTrigger').addEventListener('click', () => {
                                         blackout.style.opacity = "1";
                                         blackout.style.pointerEvents = "auto";
                                         mainContent.style.opacity = "0";
-                                        fadeOutAudio(bloomingMusic, 100, () => {
+                                        
+                                        fadeOutAudio(bloomingGain, bloomingMusic, 3000, () => {
                                             setTimeout(async () => {
+                                                if(audioCtx) understandGain.gain.value = 1;
                                                 understandMusic.play();
                                                 setTimeout(() => showLyric("Chapter 2: Confession", 3000), 500);
                                                 
@@ -262,7 +275,7 @@
                                                         }, 5000);
                                                     }, 5000);
                                                 }, 38000);
-                                            }, 5000);
+                                            }, 2000);
                                         });
                                     });
                                 }, 2000);
@@ -273,7 +286,6 @@
             }, 10000);
         });
 
-        // กด Yes สุดท้าย (glow text)
         finalYesBtn.addEventListener('click', () => {
             finalTextContainer.style.opacity = "0";
             finalBtns.style.opacity = "0";
@@ -283,14 +295,12 @@
                 finalTextContainer.style.opacity = "1";
                 confetti({ particleCount: 200, spread: 100, origin: { y: 0.7 } });
 
-                // เลื่อนไปข้อความที่ 2
                 setTimeout(() => {
                     finalTextContainer.style.opacity = "0";
                     setTimeout(() => {
                         finalTextContainer.innerHTML = 'คอยอยู่ดูแลกันไปอีกนานๆเลยนะครับที่รัก <br> 🫶🏻';
                         finalTextContainer.style.opacity = "1";
                         
-                        // เลื่อนไปข้อความ Poetic สุดท้าย
                         setTimeout(() => {
                              finalTextContainer.style.opacity = "0";
                              setTimeout(() => {
@@ -298,20 +308,18 @@
                                 finalTextContainer.innerHTML = 'And so, from this day forth...<br>you shall forever be my favourite person,<br>my home, and my heart.';
                                 finalTextContainer.style.opacity = "1";
 
-                                // เริ่มมืดลงและเพลงจบ
+                                // แก้ไขส่วนจบงาน: ขยายเวลาเพลงให้ลดลงช้าๆ 10 วินาที พร้อมข้อความ
                                 setTimeout(() => {
-                                    fadeOutAudio(understandMusic, 250);
-                                    finalTextContainer.style.transition = "opacity 8s ease-in-out";
+                                    fadeOutAudio(understandGain, understandMusic, 10000);
+                                    finalTextContainer.style.transition = "opacity 10s ease-in-out";
                                     finalTextContainer.style.opacity = "0";
-                                    blackout.style.transition = "background-color 10s ease-in-out";
+                                    blackout.style.transition = "background-color 12s ease-in-out";
                                     blackout.style.backgroundColor = "black";
                                 }, 10000); 
                              }, 2000);
                         }, 10000); 
-
                     }, 2000);
                 }, 10000); 
-
             }, 5000);
         });
 
