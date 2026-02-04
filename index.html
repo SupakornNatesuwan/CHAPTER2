@@ -157,21 +157,30 @@
 
         let audioCtx, bloomingGain, understandGain;
 
+        // แก้ไขฟังก์ชัน init สำหรับ iPad 100%
         function initAudioContext() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             bloomingGain = audioCtx.createGain();
             understandGain = audioCtx.createGain();
+
+            // เชื่อมต่อ Mixer
             audioCtx.createMediaElementSource(bloomingMusic).connect(bloomingGain).connect(audioCtx.destination);
             audioCtx.createMediaElementSource(understandMusic).connect(understandGain).connect(audioCtx.destination);
+
+            // เทคนิคจองคิวเสียง: เริ่มเล่นแบบ Mute ทันทีที่จิ้มปุ่มแรก
+            bloomingGain.gain.value = 0;
+            understandGain.gain.value = 0;
+            
+            // iPad จะยอมรับการ play() ในฟังก์ชันที่เกิดจากการ click เท่านั้น
+            bloomingMusic.play();
+            understandMusic.play(); 
         }
 
-        // ฟังก์ชัน Fade Out ที่ปรับให้เสถียรขึ้น
         function fadeOutAudio(gainNode, audioEl, duration, callback) {
             if (!audioCtx) { audioEl.pause(); if(callback) callback(); return; }
             const now = audioCtx.currentTime;
             gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            // ใช้ linearRamp เพื่อความแม่นยำในการจางหายพร้อมข้อความ
             gainNode.gain.linearRampToValueAtTime(0, now + (duration / 1000));
             setTimeout(() => {
                 audioEl.pause();
@@ -212,7 +221,9 @@
         });
 
         yesBtn.addEventListener('click', () => {
-            initAudioContext();
+            initAudioContext(); // iPad ปลดล็อกตรงนี้
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+
             const playYay = () => { for(let i=0; i<3; i++) { setTimeout(() => { new Audio(document.getElementById('yaySound').src).play(); }, i*200); } };
             playYay();
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -226,14 +237,18 @@
                     document.getElementById('openBtn').addEventListener('click', () => {
                         mainContent.style.opacity = "0";
                         setTimeout(() => {
-                            if(audioCtx) bloomingGain.gain.value = 1;
-                            bloomingMusic.currentTime = 9.5; bloomingMusic.play();
+                            // ปลด Mute เพลงแรก
+                            if(audioCtx) {
+                                bloomingGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.2);
+                                bloomingMusic.currentTime = 9.5;
+                            }
+                            
                             mainContent.innerHTML = `<div class="final-screen"><div style="font-size: 10rem;">🌹🌹🌹</div><h2 style="color: #b71c1c; margin-top: 20px; padding: 0 20px;">สุขสันต์วันวาเลนไทน์น้าค้าบบคนที่เก่งที่สุดในโลกกกกของเค้าา💖 มว๊าา😽</h2></div>`;
                             mainContent.style.opacity = "1";
                             setTimeout(() => {
                                 mainContent.style.opacity = "0";
                                 setTimeout(() => {
-                                    mainContent.innerHTML = `<div class="letter-paper"><p><strong>ถึง บิบี๋ของเค้า...</strong></p><p>ขอบคุณที่คอยเป็นความสุขของเค้าตลอดหนึ่งปีที่ผ่านมา ขอบคุณที่ตั้งใจรักเค้าและคอยอยู่ด้วยกันมาจนถึงทุกวันนี้</p><p>ในอนาคตคงจะมี ของขวัญอีกมากมาย ดอกไม้อีกหลายช่อ หวังว่าจะยังคงเป็นเธอที่คอยเปิดออกมา และคอยอยู่เคียงข้างกัน</p><p>เค้าจะคอยอยู่ข้างๆเธอแบบนี้ไปอีกนานๆเลยนะครับ รักเธอที่สุดในโลกเลยยย เ้าจะอยู่ดูแลเธอไปอีกนานๆเลยนะครับ💖</p><p style="text-align: right;">- จาก คนโปรดของเธอ -</p><div class="seal-wrapper" id="endTrigger"><span class="seal-hint">อ่านจบแล้ว<br>ลองกดดูนะคั้บบ</span><div class="wax-seal">❤</div></div></div>`;
+                                    mainContent.innerHTML = `<div class="letter-paper"><p><strong>ถึง บิบี๋ของเค้า...</strong></p><p>ขอบคุณที่คอยเป็นความสุขของเค้าตลอดหนึ่งปีที่ผ่านมา ขอบคุณที่ตั้งใจรักเค้าและคอยอยู่ด้วยกันมาจนถึงทุกวันนี้</p><p>ในอนาคตคงจะมี ของขวัญอีกมากมาย ดอกไม้อีกหลายช่อ หวังว่าจะยังคงเป็นเธอที่คอยเปิดออกมา และคอยอยู่เคียงข้างกัน</p><p>เค้าจะคอยอยู่ข้างๆเธอแบบนี้ไปอีกนานๆเลยนะครับ รักเธอที่สุดในโลกเลยยย เค้าจะอยู่ดูแลเธอไปอีกนานๆเลยนะครับ💖</p><p style="text-align: right;">- จาก คนโปรดของเธอ -</p><div class="seal-wrapper" id="endTrigger"><span class="seal-hint">อ่านจบแล้ว<br>ลองกดดูนะคั้บบ</span><div class="wax-seal">❤</div></div></div>`;
                                     mainContent.style.opacity = "1";
                                     createHeartRain();
                                     document.getElementById('endTrigger').addEventListener('click', () => {
@@ -243,10 +258,13 @@
                                         
                                         fadeOutAudio(bloomingGain, bloomingMusic, 3000, () => {
                                             setTimeout(async () => {
-                                                if(audioCtx) understandGain.gain.value = 1;
-                                                understandMusic.play();
-                                                setTimeout(() => showLyric("Chapter 2: Confession", 3000), 500);
+                                                // ปลด Mute เพลงสอง (เพลงที่รันรอไว้อยู่แล้ว)
+                                                if(audioCtx) {
+                                                    understandGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.5);
+                                                    understandMusic.currentTime = 0;
+                                                }
                                                 
+                                                setTimeout(() => showLyric("Chapter 2: Confession", 3000), 500);
                                                 setTimeout(() => showLyric("Never thought that I'd find", 2000), 13000);
                                                 setTimeout(() => showLyric("That the one in my life would be so near", 3500), 16000);
                                                 setTimeout(() => showLyric("And now you're here", 2000), 22000);
@@ -308,7 +326,6 @@
                                 finalTextContainer.innerHTML = 'And so, from this day forth...<br>you shall forever be my favourite person,<br>my home, and my heart.';
                                 finalTextContainer.style.opacity = "1";
 
-                                // แก้ไขส่วนจบงาน: ขยายเวลาเพลงให้ลดลงช้าๆ 10 วินาที พร้อมข้อความ
                                 setTimeout(() => {
                                     fadeOutAudio(understandGain, understandMusic, 10000);
                                     finalTextContainer.style.transition = "opacity 10s ease-in-out";
@@ -322,7 +339,6 @@
                 }, 10000); 
             }, 5000);
         });
-
     </script>
 </body>
 </html>
