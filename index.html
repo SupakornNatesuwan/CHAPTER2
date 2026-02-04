@@ -32,6 +32,7 @@
             z-index: 10000;
         }
 
+        /* ปุ่ม Yes แบบใหม่: ไม่มีกรอบ มีแค่ White Highlight Glow */
         .glow-text-btn {
             background: none;
             border: none;
@@ -41,6 +42,7 @@
             cursor: pointer;
             font-family: 'Mali', cursive;
             transition: all 0.5s ease;
+            /* เพิ่มเงาสีขาวฟุ้งๆ */
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 
                          0 0 20px rgba(255, 255, 255, 0.5),
                          0 0 30px rgba(255, 255, 255, 0.3);
@@ -155,12 +157,6 @@
         let textIndex = 0;
         let currentPaddingX = 20, currentPaddingY = 10, currentFontSize = 1.2;
 
-        // ฟังก์ชันปลดล็อกเสียงสำหรับ Safari (iPad/iPhone)
-        function unlockAudio() {
-            bloomingMusic.play().then(() => bloomingMusic.pause()).catch(e => console.log(e));
-            understandMusic.play().then(() => understandMusic.pause()).catch(e => console.log(e));
-        }
-
         function createHeartRain() {
             setInterval(() => {
                 const heart = document.createElement('div');
@@ -175,20 +171,17 @@
             }, 60);
         }
 
-        // ฟังก์ชัน Fade Out แบบเนียนพิเศษสำหรับ iPad
         function fadeOutAudio(audio, speed, callback) {
             let volume = audio.volume;
             const fadeInterval = setInterval(() => {
-                if (volume > 0.01) {
-                    volume -= 0.01;
-                    audio.volume = Math.max(0, volume);
+                if (volume > 0.02) {
+                    volume -= 0.02; audio.volume = volume;
                 } else {
-                    audio.volume = 0;
-                    audio.pause();
+                    audio.volume = 0; audio.pause();
                     clearInterval(fadeInterval);
                     if(callback) callback();
                 }
-            }, 50); // ลดทุกๆ 50ms เพื่อความสมูท
+            }, speed || 100);
         }
 
         async function showLyric(text, duration) {
@@ -210,7 +203,6 @@
         });
 
         yesBtn.addEventListener('click', () => {
-            unlockAudio();
             const playYay = () => { for(let i=0; i<3; i++) { setTimeout(() => { new Audio(document.getElementById('yaySound').src).play(); }, i*200); } };
             playYay();
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -221,9 +213,7 @@
                 mainContent.innerHTML = `<h1 style="font-size: 2rem; color: #b71c1c; padding: 20px; animation: floatUp 1.5s ease-out;">มีอะไรจะให้แทนคำขอบคุณที่เธอตั้งใจเป็นคนน่ารักของเค้ามาตลอด...</h1>`;
                 setTimeout(() => {
                     mainContent.innerHTML = `<div class="gift-container"><div id="giftBox" style="font-size: 8rem; cursor: pointer;">🎁</div><h2 style="color: #b71c1c; margin-top: 20px;">อยากลองเปิดรึยังเอ่ย?</h2><button id="openBtn" class="open-btn">เปิด</button></div>`;
-                    
                     document.getElementById('openBtn').addEventListener('click', () => {
-                        unlockAudio();
                         mainContent.style.opacity = "0";
                         setTimeout(() => {
                             bloomingMusic.currentTime = 9.5; bloomingMusic.play();
@@ -235,9 +225,7 @@
                                     mainContent.innerHTML = `<div class="letter-paper"><p><strong>ถึง บิบี๋ของเค้า...</strong></p><p>ขอบคุณที่คอยเป็นความสุขของเค้าตลอดหนึ่งปีที่ผ่านมา ขอบคุณที่ตั้งใจรักเค้าและคอยอยู่ด้วยกันมาจนถึงทุกวันนี้</p><p>ในอนาคตคงจะมี ของขวัญอีกมากมาย ดอกไม้อีกหลายช่อ หวังว่าจะยังคงเป็นเธอที่คอยเปิดออกมา และคอยอยู่เคียงข้างกัน</p><p>เค้าจะคอยอยู่ข้างๆเธอแบบนี้ไปอีกนานๆเลยนะครับ รักเธอที่สุดในโลกเลยยย เค้าจะอยู่ดูแลเธอไปอีกนานๆเลยนะครับ💖</p><p style="text-align: right;">- จาก คนโปรดของเธอ -</p><div class="seal-wrapper" id="endTrigger"><span class="seal-hint">อ่านจบแล้ว<br>ลองกดดูนะคั้บบ</span><div class="wax-seal">❤</div></div></div>`;
                                     mainContent.style.opacity = "1";
                                     createHeartRain();
-                                    
                                     document.getElementById('endTrigger').addEventListener('click', () => {
-                                        unlockAudio();
                                         blackout.style.opacity = "1";
                                         blackout.style.pointerEvents = "auto";
                                         mainContent.style.opacity = "0";
@@ -285,6 +273,7 @@
             }, 10000);
         });
 
+        // กด Yes สุดท้าย (glow text)
         finalYesBtn.addEventListener('click', () => {
             finalTextContainer.style.opacity = "0";
             finalBtns.style.opacity = "0";
@@ -294,12 +283,14 @@
                 finalTextContainer.style.opacity = "1";
                 confetti({ particleCount: 200, spread: 100, origin: { y: 0.7 } });
 
+                // เลื่อนไปข้อความที่ 2
                 setTimeout(() => {
                     finalTextContainer.style.opacity = "0";
                     setTimeout(() => {
                         finalTextContainer.innerHTML = 'คอยอยู่ดูแลกันไปอีกนานๆเลยนะครับที่รัก <br> 🫶🏻';
                         finalTextContainer.style.opacity = "1";
                         
+                        // เลื่อนไปข้อความ Poetic สุดท้าย
                         setTimeout(() => {
                              finalTextContainer.style.opacity = "0";
                              setTimeout(() => {
@@ -307,9 +298,9 @@
                                 finalTextContainer.innerHTML = 'And so, from this day forth...<br>you shall forever be my favourite person,<br>my home, and my heart.';
                                 finalTextContainer.style.opacity = "1";
 
+                                // เริ่มมืดลงและเพลงจบ
                                 setTimeout(() => {
-                                    // สั่ง Fade Out เพลงสุดท้ายให้เนียนนุ่ม
-                                    fadeOutAudio(understandMusic, 150);
+                                    fadeOutAudio(understandMusic, 250);
                                     finalTextContainer.style.transition = "opacity 8s ease-in-out";
                                     finalTextContainer.style.opacity = "0";
                                     blackout.style.transition = "background-color 10s ease-in-out";
@@ -317,10 +308,13 @@
                                 }, 10000); 
                              }, 2000);
                         }, 10000); 
+
                     }, 2000);
                 }, 10000); 
+
             }, 5000);
         });
+
     </script>
 </body>
 </html>
