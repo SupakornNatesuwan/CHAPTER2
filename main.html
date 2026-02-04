@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Be My Valentine?</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; width: 100vw; margin: 0; background-color: #fce4ec;
+            font-family: 'Mali', cursive;
+            text-align: center; overflow: hidden;
+        }
+
+        #main-content {
+            transition: opacity 2s ease-in-out;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+        }
+
+        .final-btn-group {
+            display: none;
+            justify-content: center;
+            margin-top: 30px;
+            opacity: 0;
+            transition: opacity 3s ease-in-out;
+            z-index: 10000;
+        }
+
+        /* ปุ่ม Yes แบบใหม่: ไม่มีกรอบ มีแค่ White Highlight Glow */
+        .glow-text-btn {
+            background: none;
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 2rem;
+            cursor: pointer;
+            font-family: 'Mali', cursive;
+            transition: all 0.5s ease;
+            /* เพิ่มเงาสีขาวฟุ้งๆ */
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 
+                         0 0 20px rgba(255, 255, 255, 0.5),
+                         0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .glow-text-btn:hover {
+            transform: scale(1.1);
+            text-shadow: 0 0 20px rgba(255, 255, 255, 1), 
+                         0 0 40px rgba(255, 255, 255, 0.8);
+        }
+
+        .heart-particle {
+            position: absolute; top: -10%; color: #ff80ab; user-select: none; pointer-events: none;
+            z-index: 1; animation: fall linear forwards;
+        }
+        @keyframes fall {
+            to { transform: translateY(110vh) rotate(360deg); }
+        }
+
+        h1 { color: #b71c1c; font-size: 2.5rem; margin-bottom: 30px; z-index: 10; line-height: 1.4; }
+        .buttons { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        
+        #yesBtn { background-color: #4caf50; color: white; border: none; padding: 10px 20px; font-size: 1.2rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; font-family: 'Mali', cursive; }
+        #noBtn { background-color: #f44336; color: white; border: none; padding: 10px 20px; font-size: 1.2rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; z-index: 6; font-family: 'Mali', cursive; }
+
+        .letter-paper {
+            background: #fff9e6;
+            background-image: radial-gradient(circle at 2px 2px, rgba(0,0,0,0.05) 1px, transparent 0), linear-gradient(#e1d5c3 1px, transparent 1px);
+            background-size: 100% 2rem;
+            padding: 50px 40px;
+            width: 85%; max-width: 450px; min-height: 350px;
+            border-radius: 2px;
+            box-shadow: 2px 2px 0 #ddd, 4px 4px 0 #ccc, 15px 15px 30px rgba(0,0,0,0.2);
+            position: relative; transform: rotate(1deg);
+            animation: fullPageFadeIn 3s ease-in-out forwards;
+            line-height: 2rem; color: #4e342e; text-align: left; border: 1px solid #d7ccc8;
+        }
+
+        .seal-wrapper {
+            position: absolute; bottom: 5px; right: 20px;
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer;
+        }
+
+        .wax-seal {
+            width: 60px; height: 60px;
+            background: #b71c1c; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; color: white; font-size: 1.5rem; transform: rotate(-10deg);
+            border: 3px solid #8e0000; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        #blackout {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: black; opacity: 0; pointer-events: none;
+            z-index: 9999; transition: opacity 5s ease-in-out;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        #final-text-container {
+            color: white; font-size: 1.8rem; padding: 20px;
+            text-shadow: 0 0 15px rgba(255,192,203,0.8);
+            transition: opacity 1.5s ease-in-out;
+            opacity: 0;
+            max-width: 80%;
+        }
+
+        #mine-word { opacity: 0; transition: opacity 1.5s ease-in-out; color: #ff4081; font-weight: bold; }
+        .highlight-blue { color: #81d4fa; font-weight: bold; text-shadow: 0 0 10px rgba(129, 212, 250, 0.5); }
+        .highlight-red { color: #ff4081; font-weight: bold; }
+
+        @keyframes fullPageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes floatUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .gift-container { animation: floatUp 1.5s ease-out forwards; display: flex; flex-direction: column; align-items: center; }
+        .open-btn { margin-top: 20px; background-color: #ff4081; color: white; border: none; padding: 12px 25px; font-size: 1.5rem; border-radius: 50px; cursor: pointer; font-family: 'Mali', cursive; }
+        .final-screen { animation: fullPageFadeIn 4s ease-in-out forwards; }
+    </style>
+</head>
+<body>
+
+    <div id="blackout">
+        <div id="final-text-container"></div>
+        <div class="final-btn-group" id="finalBtns">
+            <button id="finalYesBtn" class="glow-text-btn">Yes</button>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <h1>Will you be my Valentine?</h1>
+        <div class="buttons">
+            <button id="yesBtn">Yes</button>
+            <button id="noBtn">No</button>
+        </div>
+    </div>
+
+    <audio id="yaySound" src="sound/yay-roblox.mp3"></audio>
+    <audio id="bloomingMusic" src="sound/blooming.mp3" loop></audio>
+    <audio id="understandMusic" src="sound/understand.mp3"></audio>
+
+    <script>
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const mainContent = document.getElementById('main-content');
+        const bloomingMusic = document.getElementById('bloomingMusic');
+        const understandMusic = document.getElementById('understandMusic');
+        const finalTextContainer = document.getElementById('final-text-container');
+        const finalBtns = document.getElementById('finalBtns');
+        const finalYesBtn = document.getElementById('finalYesBtn');
+        const blackout = document.getElementById('blackout');
+        
+        const noTexts = ["แน่ใจมั้ย", "จริงๆหรออ", "บิบี๋คิดดีๆน้าาา", "ให้คิดอีกครั้งงงง", "น้าบิบี๋ของเค้าา", "เค้าจาเฉียจายน้าา", "น้าค้้าบบ", "หืออหืออออออ", "ไม่เปลี่ยนใจจริงหย๋ออ"];
+        let textIndex = 0;
+        let currentPaddingX = 20, currentPaddingY = 10, currentFontSize = 1.2;
+
+        function createHeartRain() {
+            setInterval(() => {
+                const heart = document.createElement('div');
+                heart.classList.add('heart-particle');
+                heart.innerHTML = '💖';
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.fontSize = Math.random() * 40 + 20 + 'px';
+                heart.style.animationDuration = Math.random() * 3 + 2 + 's';
+                heart.style.opacity = Math.random();
+                document.body.appendChild(heart);
+                setTimeout(() => { heart.remove(); }, 5000);
+            }, 60);
+        }
+
+        function fadeOutAudio(audio, speed, callback) {
+            let volume = audio.volume;
+            const fadeInterval = setInterval(() => {
+                if (volume > 0.02) {
+                    volume -= 0.02; audio.volume = volume;
+                } else {
+                    audio.volume = 0; audio.pause();
+                    clearInterval(fadeInterval);
+                    if(callback) callback();
+                }
+            }, speed || 100);
+        }
+
+        async function showLyric(text, duration) {
+            finalTextContainer.style.opacity = "0";
+            await new Promise(r => setTimeout(r, 600)); 
+            finalTextContainer.innerHTML = text;
+            finalTextContainer.style.opacity = "1";
+            await new Promise(r => setTimeout(r, duration));
+            finalTextContainer.style.opacity = "0";
+            await new Promise(r => setTimeout(r, 1200));
+        }
+
+        noBtn.addEventListener('click', () => {
+            currentPaddingX *= 1.4; currentPaddingY *= 1.4; currentFontSize *= 1.3;
+            yesBtn.style.padding = `${currentPaddingY}px ${currentPaddingX}px`;
+            yesBtn.style.fontSize = `${currentFontSize}rem`;
+            noBtn.innerText = noTexts[textIndex];
+            if (textIndex < noTexts.length - 1) textIndex++;
+        });
+
+        yesBtn.addEventListener('click', () => {
+            const playYay = () => { for(let i=0; i<3; i++) { setTimeout(() => { new Audio(document.getElementById('yaySound').src).play(); }, i*200); } };
+            playYay();
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+
+            mainContent.innerHTML = `<h1 style="font-size: 3rem;">เย่! ว่าแล้วเธอต้องตอบ YES</h1><h1 style="font-size: 2.2rem;">ร้ากกที่ฉุดเลยค้าบบบที่รักคนจ๋วยของเค้าาา 💖</h1><div style="font-size: 5rem;">🥰</div>`;
+
+            setTimeout(() => {
+                mainContent.innerHTML = `<h1 style="font-size: 2rem; color: #b71c1c; padding: 20px; animation: floatUp 1.5s ease-out;">มีอะไรจะให้แทนคำขอบคุณที่เธอตั้งใจเป็นคนน่ารักของเค้ามาตลอด...</h1>`;
+                setTimeout(() => {
+                    mainContent.innerHTML = `<div class="gift-container"><div id="giftBox" style="font-size: 8rem; cursor: pointer;">🎁</div><h2 style="color: #b71c1c; margin-top: 20px;">อยากลองเปิดรึยังเอ่ย?</h2><button id="openBtn" class="open-btn">เปิด</button></div>`;
+                    document.getElementById('openBtn').addEventListener('click', () => {
+                        mainContent.style.opacity = "0";
+                        setTimeout(() => {
+                            bloomingMusic.currentTime = 9.5; bloomingMusic.play();
+                            mainContent.innerHTML = `<div class="final-screen"><div style="font-size: 10rem;">🌹🌹🌹</div><h2 style="color: #b71c1c; margin-top: 20px; padding: 0 20px;">สุขสันต์วันวาเลนไทน์น้าค้าบบคนที่เก่งที่สุดในโลกกกกของเค้าา💖 มว๊าา😽</h2></div>`;
+                            mainContent.style.opacity = "1";
+                            setTimeout(() => {
+                                mainContent.style.opacity = "0";
+                                setTimeout(() => {
+                                    mainContent.innerHTML = `<div class="letter-paper"><p><strong>ถึง บิบี๋ของเค้า...</strong></p><p>ขอบคุณที่คอยเป็นความสุขของเค้าตลอดหนึ่งปีที่ผ่านมา ขอบคุณที่ตั้งใจรักเค้าและคอยอยู่ด้วยกันมาจนถึงทุกวันนี้</p><p>ในอนาคตคงจะมี ของขวัญอีกมากมาย ดอกไม้อีกหลายช่อ หวังว่าจะยังคงเป็นเธอที่คอยเปิดออกมา และคอยอยู่เคียงข้างกัน</p><p>เค้าจะคอยอยู่ข้างๆเธอแบบนี้ไปอีกนานๆเลยนะครับ รักเธอที่สุดในโลกเลยยย เค้าจะอยู่ดูแลเธอไปอีกนานๆเลยนะครับ💖</p><p style="text-align: right;">- จาก คนโปรดของเธอ -</p><div class="seal-wrapper" id="endTrigger"><span class="seal-hint">อ่านจบแล้ว<br>ลองกดดูนะคั้บบ</span><div class="wax-seal">❤</div></div></div>`;
+                                    mainContent.style.opacity = "1";
+                                    createHeartRain();
+                                    document.getElementById('endTrigger').addEventListener('click', () => {
+                                        blackout.style.opacity = "1";
+                                        blackout.style.pointerEvents = "auto";
+                                        mainContent.style.opacity = "0";
+                                        fadeOutAudio(bloomingMusic, 100, () => {
+                                            setTimeout(async () => {
+                                                understandMusic.play();
+                                                setTimeout(() => showLyric("Chapter 2: Confession", 3000), 500);
+                                                
+                                                setTimeout(() => showLyric("Never thought that I'd find", 2000), 13000);
+                                                setTimeout(() => showLyric("That the one in my life would be so near", 3500), 16000);
+                                                setTimeout(() => showLyric("And now you're here", 2000), 22000);
+                                                setTimeout(() => showLyric("I got you, you got me", 2000), 25000);
+                                                setTimeout(() => showLyric("When it's us, babe, you make me feel complete", 4500), 28000);
+                                                setTimeout(() => {
+                                                    finalTextContainer.style.opacity = "0";
+                                                    setTimeout(() => {
+                                                        finalTextContainer.innerHTML = '<span class="highlight-red">You\'re all I need</span>';
+                                                        finalTextContainer.style.opacity = "1";
+                                                        setTimeout(() => { finalTextContainer.style.opacity = "0"; }, 2000);
+                                                    }, 300);
+                                                }, 34000);
+                                                setTimeout(async () => {
+                                                    await showLyric("Would you be the only person I'd miss ? 💖", 4000);
+                                                    await showLyric("Would you be the only person I'd stay with ? 💖", 4000);
+                                                    finalTextContainer.style.opacity = "0";
+                                                    await new Promise(r => setTimeout(r, 1000));
+                                                    finalTextContainer.innerHTML = 'Would you be...<span id="mine-word">"mine" ? 💖</span>';
+                                                    finalTextContainer.style.opacity = "1";
+                                                    setTimeout(() => {
+                                                        document.getElementById('mine-word').style.opacity = "1";
+                                                        setTimeout(() => {
+                                                            finalBtns.style.display = "flex";
+                                                            setTimeout(() => { finalBtns.style.opacity = "1"; }, 100);
+                                                        }, 5000);
+                                                    }, 5000);
+                                                }, 38000);
+                                            }, 5000);
+                                        });
+                                    });
+                                }, 2000);
+                            }, 11000);
+                        }, 2000);
+                    });
+                }, 5000); 
+            }, 10000);
+        });
+
+        // กด Yes สุดท้าย (glow text)
+        finalYesBtn.addEventListener('click', () => {
+            finalTextContainer.style.opacity = "0";
+            finalBtns.style.opacity = "0";
+            setTimeout(() => {
+                finalBtns.style.display = "none";
+                finalTextContainer.innerHTML = 'เค้ารักเธอนะครับ..<br><span class="highlight-blue">แฟน</span>คนโปรดของเค้า..<br>🌻';
+                finalTextContainer.style.opacity = "1";
+                confetti({ particleCount: 200, spread: 100, origin: { y: 0.7 } });
+
+                // เลื่อนไปข้อความที่ 2
+                setTimeout(() => {
+                    finalTextContainer.style.opacity = "0";
+                    setTimeout(() => {
+                        finalTextContainer.innerHTML = 'คอยอยู่ดูแลกันไปอีกนานๆเลยนะครับที่รัก <br> 🫶🏻';
+                        finalTextContainer.style.opacity = "1";
+                        
+                        // เลื่อนไปข้อความ Poetic สุดท้าย
+                        setTimeout(() => {
+                             finalTextContainer.style.opacity = "0";
+                             setTimeout(() => {
+                                finalTextContainer.style.fontSize = "1.5rem"; 
+                                finalTextContainer.innerHTML = 'And so, from this day forth...<br>you shall forever be my favourite person,<br>my home, and my heart.';
+                                finalTextContainer.style.opacity = "1";
+
+                                // เริ่มมืดลงและเพลงจบ
+                                setTimeout(() => {
+                                    fadeOutAudio(understandMusic, 250);
+                                    finalTextContainer.style.transition = "opacity 8s ease-in-out";
+                                    finalTextContainer.style.opacity = "0";
+                                    blackout.style.transition = "background-color 10s ease-in-out";
+                                    blackout.style.backgroundColor = "black";
+                                }, 10000); 
+                             }, 2000);
+                        }, 10000); 
+
+                    }, 2000);
+                }, 10000); 
+
+            }, 5000);
+        });
+
+    </script>
+</body>
+</html>
